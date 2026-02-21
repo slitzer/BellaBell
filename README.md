@@ -4,9 +4,10 @@ Self-hosted price monitoring with a clean web UI. Add an item URL, tell it how t
 
 ## Current build status
 
-This repository now includes an **initial backend API scaffold** for the MVP:
+This repository now includes an **MVP backend API** with:
 
 - FastAPI service with SQLite persistence
+- Header-based lightweight authentication (`X-User-Id`) and per-user item ownership
 - Item CRUD basics (`create`, `list`)
 - Manual check endpoint to fetch + extract + store price observation
 - Extraction preview endpoint for CSS selector validation
@@ -26,15 +27,14 @@ Open `http://127.0.0.1:8000/docs` for interactive API docs.
 ## Implemented API endpoints
 
 - `GET /health`
-- `POST /items`
-- `GET /items`
-- `GET /items/{item_id}/history`
-- `POST /items/{item_id}/check`
+- `POST /items` *(requires `X-User-Id` header)*
+- `GET /items` *(requires `X-User-Id` header)*
+- `GET /items/{item_id}/history` *(requires `X-User-Id` header)*
+- `POST /items/{item_id}/check` *(requires `X-User-Id` header)*
 - `POST /extract/preview`
 
 ## Next steps
 
-- Add authentication + user ownership on items
 - Add scheduler/worker split for automated checks
 - Add notification channels (SMTP + Telegram)
 - Add UI for dashboard, item creation, and history graphs

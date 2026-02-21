@@ -11,6 +11,7 @@ class ItemCreate(BaseModel):
 
 class ItemRead(BaseModel):
     id: int
+    owner_id: int | None
     name: str
     url: str
     css_selector: str
