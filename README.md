@@ -4,7 +4,7 @@ Self-hosted price monitoring with a clean web UI. Add an item URL, tell it how t
 
 ## Current build status
 
-This repository now includes an **MVP backend API** with:
+This repository now includes an **MVP backend API** with a lightweight web UI.
 
 - FastAPI service with SQLite persistence
 - Header-based lightweight authentication (`X-User-Id`) and per-user item ownership
@@ -22,7 +22,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000/docs` for interactive API docs.
+Open `http://127.0.0.1:8000/` for the dashboard UI, or `http://127.0.0.1:8000/docs` for interactive API docs.
 
 ## Implemented API endpoints
 
@@ -37,4 +37,4 @@ Open `http://127.0.0.1:8000/docs` for interactive API docs.
 
 - Add scheduler/worker split for automated checks
 - Add notification channels (SMTP + Telegram)
-- Add UI for dashboard, item creation, and history graphs
+- Add history graphs and richer UI states (loading/error badges, item filtering)
