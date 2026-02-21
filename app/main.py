@@ -1,10 +1,11 @@
 from datetime import datetime, UTC
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Header
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
-from .models import Item, PriceObservation
+from .models import Item, PriceObservation, User
 from .schemas import (
     ItemCreate,
     ItemRead,
@@ -16,7 +17,40 @@ from .extractor import extract_price_by_css, ExtractionError
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="BellaBell API", version="0.1.0")
+
+def _ensure_owner_column() -> None:
+    inspector = inspect(engine)
+    if "items" not in inspector.get_table_names():
+        return
+
+    column_names = {column["name"] for column in inspector.get_columns("items")}
+    if "owner_id" not in column_names:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE items ADD COLUMN owner_id INTEGER"))
+
+
+_ensure_owner_column()
+
+app = FastAPI(title="BellaBell API", version="0.2.0")
+
+
+def get_current_user(
+    db: Session = Depends(get_db),
+    user_identifier: str | None = Header(default=None, alias="X-User-Id"),
+) -> User:
+    if user_identifier is None or not user_identifier.strip():
+        raise HTTPException(status_code=401, detail="Missing X-User-Id header")
+
+    normalized_identifier = user_identifier.strip()
+    existing_user = db.query(User).filter(User.external_id == normalized_identifier).first()
+    if existing_user is not None:
+        return existing_user
+
+    created_user = User(external_id=normalized_identifier)
+    db.add(created_user)
+    db.commit()
+    db.refresh(created_user)
+    return created_user
 
 
 @app.get("/health")
@@ -25,8 +59,12 @@ def health_check():
 
 
 @app.post("/items", response_model=ItemRead)
-def create_item(payload: ItemCreate, db: Session = Depends(get_db)):
-    item = Item(**payload.model_dump())
+def create_item(
+    payload: ItemCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    item = Item(**payload.model_dump(), owner_id=current_user.id)
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -34,13 +72,22 @@ def create_item(payload: ItemCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/items", response_model=list[ItemRead])
-def list_items(db: Session = Depends(get_db)):
-    return db.query(Item).order_by(Item.created_at.desc()).all()
+def list_items(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return (
+        db.query(Item)
+        .filter(Item.owner_id == current_user.id)
+        .order_by(Item.created_at.desc())
+        .all()
+    )
 
 
 @app.get("/items/{item_id}/history", response_model=list[ObservationRead])
-def item_history(item_id: int, db: Session = Depends(get_db)):
-    item = db.get(Item, item_id)
+def item_history(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    item = db.query(Item).filter(Item.id == item_id, Item.owner_id == current_user.id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
@@ -53,8 +100,12 @@ def item_history(item_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/items/{item_id}/check", response_model=ObservationRead)
-def check_item(item_id: int, db: Session = Depends(get_db)):
-    item = db.get(Item, item_id)
+def check_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    item = db.query(Item).filter(Item.id == item_id, Item.owner_id == current_user.id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
