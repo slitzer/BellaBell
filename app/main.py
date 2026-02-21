@@ -1,6 +1,9 @@
 from datetime import datetime, UTC
+from pathlib import Path
 
 from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
@@ -32,6 +35,8 @@ def _ensure_owner_column() -> None:
 _ensure_owner_column()
 
 app = FastAPI(title="BellaBell API", version="0.2.0")
+UI_DIRECTORY = Path(__file__).parent / "ui"
+app.mount("/ui", StaticFiles(directory=UI_DIRECTORY), name="ui")
 
 
 def get_current_user(
@@ -56,6 +61,11 @@ def get_current_user(
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+@app.get("/", include_in_schema=False)
+def dashboard() -> FileResponse:
+    return FileResponse(UI_DIRECTORY / "index.html")
 
 
 @app.post("/items", response_model=ItemRead)

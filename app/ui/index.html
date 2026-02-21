@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BellaBell Dashboard</title>
+    <link rel="stylesheet" href="/ui/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>BellaBell</h1>
+        <p>Track item prices and run checks on demand.</p>
+      </header>
+
+      <section class="card auth-card">
+        <h2>User Session</h2>
+        <label for="user-id">X-User-Id</label>
+        <div class="row">
+          <input id="user-id" type="text" placeholder="example: alex" />
+          <button id="save-user" type="button">Use</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Add Item</h2>
+        <form id="create-item-form">
+          <div class="grid">
+            <label>
+              Name
+              <input name="name" type="text" required />
+            </label>
+            <label>
+              URL
+              <input name="url" type="url" required />
+            </label>
+            <label>
+              CSS selector
+              <input name="css_selector" type="text" required placeholder=".price" />
+            </label>
+            <label>
+              Check interval (minutes)
+              <input name="check_interval_minutes" type="number" min="1" value="60" required />
+            </label>
+            <label>
+              Target price (optional)
+              <input name="target_price" type="number" step="0.01" min="0" />
+            </label>
+          </div>
+          <button type="submit">Create item</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="row items-header">
+          <h2>Your Items</h2>
+          <button id="refresh-items" type="button">Refresh</button>
+        </div>
+        <div id="items" class="items"></div>
+      </section>
+
+      <section class="card">
+        <h2>Item History</h2>
+        <p id="history-hint">Select an item to see its latest observations.</p>
+        <ul id="history-list" class="history-list"></ul>
+      </section>
+
+      <p id="toast" class="toast" aria-live="polite"></p>
+    </main>
+
+    <script src="/ui/app.js" type="module"></script>
+  </body>
+</html>
